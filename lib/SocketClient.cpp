@@ -1,6 +1,23 @@
 #include "SocketClient.h"
 #include <string.h>
 
+//sdl
+#include <SDL/SDL.h>
+#include <SDL/SDL_thread.h>
+#include <SDL/SDL_audio.h>
+#include <SDL/SDL_timer.h>
+#include <linux/videodev.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <time.h>
+#include <sys/time.h>
+#include <signal.h>
+#include <X11/Xlib.h>
+#include <SDL/SDL_syswm.h>
+
+
 SocketClient::SocketClient(){}
 
 SocketClient::SocketClient(std::string address, int port){
@@ -109,7 +126,7 @@ int SocketClient::receive_buf(void* buf, uint32_t length){
     int received = 0;
 
     while(received < length){
-        code = ::recv(m_socket, buf, length, 0);
+        code = ::recv(m_socket, (char*)buf + received, length-received, 0);
         if(code < 0){ //TODO
             printf("%s: fail to recv buf, ret=%d\n", __FUNCTION__, code);
             return code;
@@ -165,10 +182,73 @@ void SocketClient::receiveThread(){
 }
 */
 
+struct pt_data {
+    SDL_Surface **ptscreen;
+    SDL_Event *ptsdlevent;
+    SDL_Rect *drect;
+    struct vdIn *ptvideoIn;
+    float frmrate;
+    SDL_mutex *affmutex;
+} ptdata;
+
 void SocketClient::receiveThread(){
+    //
+    SDL_Surface *pscreen;
+    SDL_Overlay *overlay;
+    SDL_Rect drect;
+    SDL_Event sdlevent;
+    SDL_Thread *mythread;
+    SDL_mutex *affmutex;
+	char driver[128];
+
+    static Uint32 SDL_VIDEO_Flags =
+        SDL_ANYFORMAT | SDL_DOUBLEBUF | SDL_RESIZABLE;
+
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+		fprintf(stderr, "Couldn't initialize SDL: %s\n", SDL_GetError());
+		exit(1);
+	}
+
+	printf("SDL information:\n");
+	if (SDL_VideoDriverName(driver, sizeof(driver))) {
+		printf("  Video driver: %s\n", driver);
+	}
+
+    const SDL_VideoInfo *info = SDL_GetVideoInfo();
+
+	if (true) {
+		printf("  A window manager is available\n");
+	}
+	if (!(SDL_VIDEO_Flags & SDL_HWSURFACE))
+		SDL_VIDEO_Flags |= SDL_SWSURFACE;
+
+
+	pscreen = SDL_SetVideoMode(640, 480, 0, SDL_VIDEO_Flags);
+
+	overlay = SDL_CreateYUVOverlay(640, 480, SDL_YUY2_OVERLAY, pscreen);
+    unsigned char *p = NULL;
+	p = (unsigned char *) overlay->pixels[0];
+	drect.x = 0;
+	drect.y = 0;
+	drect.w = pscreen->w;
+	drect.h = pscreen->h;
+	//initLut();
+	//lasttime = SDL_GetTicks();
+
+	ptdata.ptscreen = &pscreen;
+	//ptdata.ptvideoIn = videoIn;
+	ptdata.ptsdlevent = &sdlevent;
+	ptdata.drect = &drect;
+	affmutex = SDL_CreateMutex();
+	ptdata.affmutex = affmutex;
+	//mythread = SDL_CreateThread(eventThread, (void *) &ptdata);
+    FILE* dump=fopen("stream2.raw", "wb");
+
+    //
     std::string key, message;
     int code1, code2, code3;
     uint32_t msgId = 0;
+    char* frame = (char*)malloc(640*480*2);
     while (!m_threadStopped) {
         //receive msg head
         code1 = receive_buf(&msgId, sizeof(msgId));
@@ -178,9 +258,19 @@ void SocketClient::receiveThread(){
             code2 = receive_buf(&msg, sizeof(msg));
             printf("%s: receive msgId=%d, wxh=%dx%d, buflen=%d\n", __FUNCTION__, msgId, msg.width, msg.height, msg.bufLen);
 
-            char* frame = (char*)malloc(msg.bufLen);
             code3 = receive_buf(frame, msg.bufLen);
-            free(frame);
+
+            //
+            SDL_LockYUVOverlay(overlay);
+            memcpy(p, frame, 640 * 480 * 2);
+//            fwrite(frame, 640*480*2, 1, dump);
+            //memset(p,0,640*480*2);
+            SDL_UnlockYUVOverlay(overlay);
+            SDL_DisplayYUVOverlay(overlay, &drect);
+            SDL_Delay(10);
+            //
+
+
         }
         if(code1==0 || code2==0 || code3==0){
             printf("%s: disconnect socket\n", __FUNCTION__);
@@ -195,4 +285,7 @@ void SocketClient::receiveThread(){
             }
         }
     }
+    fclose(dump);
+    free(frame);
+	SDL_Quit();
 }
