@@ -9,6 +9,7 @@
 #include <map>
 
 #include "Base64.h"
+#include "message.h"
 
 class SocketClient {
     private:
@@ -34,6 +35,8 @@ class SocketClient {
         }
         int receive(std::string &message);
         bool send(std::string message);
+
+        int receive_buf(void* buf, uint32_t length);
 
     public:
         SocketClient();

@@ -1,4 +1,5 @@
 #include "SocketClient.h"
+#include <string.h>
 
 SocketClient::SocketClient(){}
 
@@ -103,6 +104,29 @@ int SocketClient::receive(std::string &message){
     return code;
 }
 
+int SocketClient::receive_buf(void* buf, uint32_t length){
+    int code;
+    int received = 0;
+
+    while(received < length){
+        code = ::recv(m_socket, buf, length, 0);
+        if(code < 0){ //TODO
+            printf("%s: fail to recv buf, ret=%d\n", __FUNCTION__, code);
+            return code;
+        }
+        if(code == 0){
+            printf("%s: fail to recv buf, ret=%d\n", __FUNCTION__, code);
+            return code;
+        }
+        received += code;
+    }
+    if (received != length){
+        printf("%s: request receive=%d, real=%d\n", __FUNCTION__, length, received);
+        return 0; //let call disconnect socket
+    }
+    return received; //return the real received count
+}
+
 void SocketClient::addListener(std::string key, void (*messageListener) (SocketClient*, std::vector<std::string>)){
     m_messageListenerMap[key] = messageListener;
 }
@@ -119,6 +143,7 @@ void* SocketClient::getTag(){
     return m_tag;
 }
 
+/*
 void SocketClient::receiveThread(){
     std::string key, message;
     int code1, code2;
@@ -134,6 +159,39 @@ void SocketClient::receiveThread(){
         else if(code1!=-1 && code2!=-1){
             if(m_messageListenerMap[key]!=NULL){
                 (*m_messageListenerMap[key])(this, stringToVector(message));
+            }
+        }
+    }
+}
+*/
+
+void SocketClient::receiveThread(){
+    std::string key, message;
+    int code1, code2, code3;
+    uint32_t msgId = 0;
+    while (!m_threadStopped) {
+        //receive msg head
+        code1 = receive_buf(&msgId, sizeof(msgId));
+        if (msgId == MSG_FRAME_INFO){
+            struct MsgFrameInfo msg;
+            memset(&msg, 0, sizeof(msg));
+            code2 = receive_buf(&msg, sizeof(msg));
+            printf("%s: receive msgId=%d, wxh=%dx%d, buflen=%d\n", __FUNCTION__, msgId, msg.width, msg.height, msg.bufLen);
+
+            char* frame = (char*)malloc(msg.bufLen);
+            code3 = receive_buf(frame, msg.bufLen);
+            free(frame);
+        }
+        if(code1==0 || code2==0 || code3==0){
+            printf("%s: disconnect socket\n", __FUNCTION__);
+            disconnect();
+            if(m_disconnectListener!=NULL){
+                (*m_disconnectListener)(this);
+            }
+        }
+        else if(code1!=-1 && code2!=-1 && code3 != -1){
+            if(m_messageListenerMap[key]!=NULL){
+               // (*m_messageListenerMap[key])(this, stringToVector(message));
             }
         }
     }
