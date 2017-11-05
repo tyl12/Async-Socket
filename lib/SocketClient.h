@@ -11,6 +11,23 @@
 #include "Base64.h"
 #include "message.h"
 
+//sdl
+#include <SDL/SDL.h>
+#include <SDL/SDL_thread.h>
+#include <SDL/SDL_audio.h>
+#include <SDL/SDL_timer.h>
+#include <linux/videodev.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <time.h>
+#include <sys/time.h>
+#include <signal.h>
+#include <X11/Xlib.h>
+#include <SDL/SDL_syswm.h>
+
+
 class SocketClient {
     private:
         void *m_tag;
@@ -37,6 +54,13 @@ class SocketClient {
         bool send(std::string message);
 
         int receive_buf(void* buf, uint32_t length);
+
+        //sdl related
+        int bSDLinit;
+        SDL_Overlay *overlay;
+        SDL_Rect drect;
+        int SDLinit(int width, int height);
+        int SDLdisplay(char* frame, int len);
 
     public:
         SocketClient();
