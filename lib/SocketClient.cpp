@@ -1,9 +1,6 @@
 #include "SocketClient.h"
 #include <string.h>
 
-
-SocketClient::SocketClient(){}
-
 SocketClient::SocketClient(std::string address, int port){
     m_address = address;
     m_port = port;
@@ -17,7 +14,24 @@ SocketClient::SocketClient(std::string address, int port){
     m_connected = false;
     m_threadStopped = false;
     m_packetSize = 4096;
+
+    bUnixDomain = false;
 }
+
+//ylteng: UNIX domain socket
+SocketClient::SocketClient(){
+    m_unserver.sun_family = AF_UNIX;
+    strcpy(m_unserver.sun_path, "uvc_socket");
+
+    m_tag = NULL;
+    m_disconnectListener = NULL;
+    m_connected = false;
+    m_threadStopped = false;
+    m_packetSize = 4096;
+
+    bUnixDomain = true;
+}
+
 
 SocketClient::SocketClient(int socket){
     m_socket = socket;
@@ -34,15 +48,29 @@ int SocketClient::getSocket(){
 }
 
 bool SocketClient::connect(){
-    m_socket = socket(AF_INET , SOCK_STREAM , 0);
-    if(m_socket == -1)
-    {
-        return false;
-    }
+    if (bUnixDomain){
+        m_socket = socket(AF_UNIX , SOCK_STREAM , 0);
+        if(m_socket == -1)
+        {
+            return false;
+        }
 
-    if(::connect(m_socket, (struct sockaddr *)&m_server, sizeof(m_server)) < 0)
-    {
-        return false;
+        if(::connect(m_socket, (struct sockaddr *)&m_unserver, sizeof(m_unserver)) < 0)
+        {
+            return false;
+        }
+    }
+    else{
+        m_socket = socket(AF_INET , SOCK_STREAM , 0);
+        if(m_socket == -1)
+        {
+            return false;
+        }
+
+        if(::connect(m_socket, (struct sockaddr *)&m_server, sizeof(m_server)) < 0)
+        {
+            return false;
+        }
     }
 
     m_connected = true;
@@ -177,6 +205,7 @@ struct pt_data {
 
 
 
+//ylteng: SDL
 int SocketClient::SDLinit(int width, int height)
 {
     //

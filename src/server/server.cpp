@@ -46,7 +46,11 @@ void freeMemory(){
 int main(int argc , char *argv[]){
 	srand(time(NULL));
 
-	SocketServer server(8888);
+    //use inter domain socket
+	//SocketServer server(8888);
+    //use unix domain socket
+	SocketServer server;
+
 	if(server.start()){
 		cout << "server started. Listening on port 8888..." << endl;
 		while (1) {

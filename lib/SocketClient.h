@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <map>
+#include <sys/un.h>
 
 #include "Base64.h"
 #include "message.h"
@@ -27,12 +28,15 @@
 #include <X11/Xlib.h>
 #include <SDL/SDL_syswm.h>
 
-
 class SocketClient {
     private:
         void *m_tag;
+        //unix domain socket
+        struct sockaddr_un m_unserver;
+        bool bUnixDomain;
 
         struct sockaddr_in m_server;
+
         std::string m_address;
         int m_port;
         int m_socket;
