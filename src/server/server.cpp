@@ -43,16 +43,27 @@ void freeMemory(){
 	}
 }
 
+
+#define USE_UNIX_DOMAIN true
 int main(int argc , char *argv[]){
 	srand(time(NULL));
 
-    //use inter domain socket
-	//SocketServer server(8888);
+#if (USE_UNIX_DOMAIN)
     //use unix domain socket
 	SocketServer server;
+    cout<<"use unix domain socket"<<endl;
+#else
+    //use inter domain socket
+	SocketServer server(8888);
+    cout<<"use inter domain socket"<<endl;
+#endif
 
 	if(server.start()){
+#if (USE_UNIX_DOMAIN)
+		cout << "server started. Listening on uvc_socket..." << endl;
+#else
 		cout << "server started. Listening on port 8888..." << endl;
+#endif
 		while (1) {
 			int sock = server.accept();
 			if(sock!=-1){
