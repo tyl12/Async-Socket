@@ -1,4 +1,6 @@
 #include "SocketServer.h"
+#include <unistd.h>
+#include "stddef.h"
 
 SocketServer::SocketServer(int port){
     m_port = port;
@@ -11,6 +13,8 @@ SocketServer::SocketServer(int port){
 
 //ylteng: Unix domain socket
 SocketServer::SocketServer(){
+    unlink("uvc_socket");               /* in case it already exists */
+    memset(&m_unserver, 0, sizeof(m_unserver));
     m_unserver.sun_family = AF_UNIX;
     strcpy(m_unserver.sun_path, "uvc_socket");
 
@@ -22,7 +26,9 @@ bool SocketServer::start(){
         m_socket = ::socket(AF_UNIX , SOCK_STREAM , 0);
 
         if(m_socket!=-1){
-            if(::bind(m_socket,(struct sockaddr *)&m_unserver , sizeof(m_unserver)) >= 0){
+            //if(::bind(m_socket,(struct sockaddr *)&m_unserver , sizeof(m_unserver)) >= 0){
+            int len = offsetof(struct sockaddr_un, sun_path) + strlen("uvc_socket");
+            if(::bind(m_socket,(struct sockaddr *)&m_unserver , len) >= 0){
                 ::listen(m_socket, 3);
                 return true;
             }

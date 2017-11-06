@@ -10,7 +10,7 @@
 #include <sys/un.h>
 
 #include "Base64.h"
-#include "message.h"
+#include "../../common/message.h"
 
 //sdl
 #include <SDL/SDL.h>
@@ -34,6 +34,8 @@ class SocketClient {
         //unix domain socket
         struct sockaddr_un m_unserver;
         bool bUnixDomain;
+
+	    float frmrate;
 
         struct sockaddr_in m_server;
 

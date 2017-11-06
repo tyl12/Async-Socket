@@ -21,7 +21,7 @@ SocketClient::SocketClient(std::string address, int port){
 //ylteng: UNIX domain socket
 SocketClient::SocketClient(){
     m_unserver.sun_family = AF_UNIX;
-    strcpy(m_unserver.sun_path, "uvc_socket");
+    strcpy(m_unserver.sun_path, UNIX_DOMAIN_SOCKET_NAME);
 
     m_tag = NULL;
     m_disconnectListener = NULL;
@@ -279,7 +279,18 @@ void SocketClient::receiveThread(){
     std::string key, message;
     int code1, code2, code3;
     uint32_t msgId = 0;
-    char* frame = (char*)malloc(640*480*2);
+    char* frame = NULL;
+	frmrate = 0.0;
+	const int frmrate_update = 30;
+
+    //measure fps
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    long lasttime_ms = tv.tv_sec*1000 + tv.tv_usec/1000;
+	int loop_counter = 0;
+    long currtime_ms;
+
+	float frmrate = 0.0;		// Measured frame rate
     while (!m_threadStopped) {
         //receive msg head
         code1 = receive_buf(&msgId, sizeof(msgId));
@@ -288,6 +299,13 @@ void SocketClient::receiveThread(){
             memset(&msg, 0, sizeof(msg));
             code2 = receive_buf(&msg, sizeof(msg));
             printf("%s: receive msgId=%d, wxh=%dx%d, buflen=%d\n", __FUNCTION__, msgId, msg.width, msg.height, msg.bufLen);
+            if (frame == NULL){
+                frame = (char*)malloc(msg.bufLen);
+                if (frame == NULL){
+                    printf("%s: ERROR: fail to mallc frame buffer with size %d\n", __FUNCTION__, msg.bufLen);
+                    return;
+                }
+            }
 
             code3 = receive_buf(frame, msg.bufLen);
 
@@ -298,7 +316,22 @@ void SocketClient::receiveThread(){
             }
             SDLdisplay(frame, msg.bufLen);
             //fwrite(frame, msg.bufLen, 1, dump);
-            //
+
+		    if(loop_counter ++ % frmrate_update == 0){
+                gettimeofday(&tv,NULL);
+                currtime_ms = tv.tv_sec*1000 + tv.tv_usec/1000;
+                if (currtime_ms - lasttime_ms > 0){
+                    frmrate = frmrate_update * (1000.0 / (currtime_ms - lasttime_ms));
+                }
+                lasttime_ms = currtime_ms;
+
+                int len = 100 * sizeof(char);	// as allocated in init_videoIn
+                char sdlcaption[100];
+                snprintf(sdlcaption, len, "%s, %.1f fps", "UVC socket", frmrate);
+                SDL_WM_SetCaption(sdlcaption, NULL);
+
+			    printf("\rframe rate: %g \n", frmrate);
+            }
         }
         if(code1==0 || code2==0 || code3==0){
             printf("%s: disconnect socket\n", __FUNCTION__);
