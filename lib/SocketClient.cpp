@@ -1,6 +1,9 @@
 #include "SocketClient.h"
 #include <string.h>
 
+#define SDL_DISPLAY
+#undef SDL_DISPLAY
+
 SocketClient::SocketClient(std::string address, int port){
     m_address = address;
     m_port = port;
@@ -16,6 +19,7 @@ SocketClient::SocketClient(std::string address, int port){
     m_packetSize = 4096;
 
     bUnixDomain = false;
+    strcpy(clientName, "");
 }
 
 //ylteng: UNIX domain socket
@@ -30,6 +34,7 @@ SocketClient::SocketClient(){
     m_packetSize = 4096;
 
     bUnixDomain = true;
+    strcpy(clientName, "");
 }
 
 
@@ -41,6 +46,7 @@ SocketClient::SocketClient(int socket){
     m_threadStopped = false;
     m_packetSize = 4096;
     pthread_create(&m_thread, NULL, &staticReceiveThread, this);
+    strcpy(clientName, "");
 }
 
 int SocketClient::getSocket(){
@@ -291,6 +297,7 @@ void SocketClient::receiveThread(){
     long currtime_ms;
 
 	float frmrate = 0.0;		// Measured frame rate
+
     while (!m_threadStopped) {
         //receive msg head
         code1 = receive_buf(&msgId, sizeof(msgId));
@@ -298,25 +305,27 @@ void SocketClient::receiveThread(){
             struct MsgFrameInfo msg;
             memset(&msg, 0, sizeof(msg));
             code2 = receive_buf(&msg, sizeof(msg));
-            printf("%s: receive msgId=%d, wxh=%dx%d, buflen=%d\n", __FUNCTION__, msgId, msg.width, msg.height, msg.bufLen);
+#ifdef DEBUG
+            printf("%s: %s: receive msgId=%d, wxh=%dx%d, buflen=%d\n", __FUNCTION__, clientName, msgId, msg.width, msg.height, msg.bufLen);
+#endif
             if (frame == NULL){
                 frame = (char*)malloc(msg.bufLen);
                 if (frame == NULL){
-                    printf("%s: ERROR: fail to mallc frame buffer with size %d\n", __FUNCTION__, msg.bufLen);
+                    printf("%s: %s: ERROR: fail to mallc frame buffer with size %d\n", __FUNCTION__, clientName, msg.bufLen);
                     return;
                 }
             }
 
             code3 = receive_buf(frame, msg.bufLen);
 
-            //
+#ifdef SDL_DISPLAY
             if (!bSDLinit){
                 SDLinit(msg.width, msg.height);
                 bSDLinit = 1;
             }
             SDLdisplay(frame, msg.bufLen);
             //fwrite(frame, msg.bufLen, 1, dump);
-
+#endif
 		    if(loop_counter ++ % frmrate_update == 0){
                 gettimeofday(&tv,NULL);
                 currtime_ms = tv.tv_sec*1000 + tv.tv_usec/1000;
@@ -325,16 +334,30 @@ void SocketClient::receiveThread(){
                 }
                 lasttime_ms = currtime_ms;
 
+#ifdef SDL_DISPLAY
                 int len = 100 * sizeof(char);	// as allocated in init_videoIn
                 char sdlcaption[100];
                 snprintf(sdlcaption, len, "%s, %.1f fps", "UVC socket", frmrate);
                 SDL_WM_SetCaption(sdlcaption, NULL);
-
-			    printf("\rframe rate: %g \n", frmrate);
+#endif
+			    printf("%s: frame rate: %g \n", clientName, frmrate);
             }
         }
+        else if (msgId == MSG_CLIENT_NAME){
+            //get client name
+            struct MsgClientName msg;
+            memset(&msg, 0, sizeof(msg));
+            code2 = receive_buf(&msg, sizeof(msg));
+            code3 = 1; //TODO: avoid disconnect
+            strcpy(clientName, msg.name);
+            printf("%s: client name: %s\n", __FUNCTION__, clientName);
+        }
+        else{
+            printf("%s: %s: ERROR: unrecognized msgid %d\n", __FUNCTION__, clientName, msgId);
+            code1 = code2 = code3 = 0; //TODO
+        }
         if(code1==0 || code2==0 || code3==0){
-            printf("%s: disconnect socket\n", __FUNCTION__);
+            printf("%s: %s: disconnect socket\n", clientName, __FUNCTION__);
             disconnect();
             if(m_disconnectListener!=NULL){
                 (*m_disconnectListener)(this);
@@ -349,5 +372,7 @@ void SocketClient::receiveThread(){
     //DEBUG
     //fclose(dump);
     free(frame);
+#ifdef SDL_DISPLAY
 	SDL_Quit();
+#endif
 }

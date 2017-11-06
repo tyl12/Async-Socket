@@ -34,8 +34,8 @@ class SocketClient {
         //unix domain socket
         struct sockaddr_un m_unserver;
         bool bUnixDomain;
-
 	    float frmrate;
+        char clientName[64];
 
         struct sockaddr_in m_server;
 
