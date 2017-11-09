@@ -242,9 +242,10 @@ int SocketClient::SDLinit(int width, int height)
 		SDL_VIDEO_Flags |= SDL_SWSURFACE;
 
 
-	pscreen = SDL_SetVideoMode(640, 480, 0, SDL_VIDEO_Flags);
+	pscreen = SDL_SetVideoMode(width, height, 0, SDL_VIDEO_Flags);
 
-	overlay = SDL_CreateYUVOverlay(640, 480, SDL_YUY2_OVERLAY, pscreen);
+    //NOTES: here create overlay only for YUV422 format
+	overlay = SDL_CreateYUVOverlay(width, height, SDL_YUY2_OVERLAY, pscreen);
 	drect.x = 0;
 	drect.y = 0;
 	drect.w = pscreen->w;
@@ -323,7 +324,9 @@ void SocketClient::receiveThread(){
                 SDLinit(msg.width, msg.height);
                 bSDLinit = 1;
             }
-            SDLdisplay(frame, msg.bufLen);
+            if (bSDLinit)
+                SDLdisplay(frame, msg.bufLen);
+
             //fwrite(frame, msg.bufLen, 1, dump);
 #endif
 		    if(loop_counter ++ % frmrate_update == 0){
@@ -335,10 +338,12 @@ void SocketClient::receiveThread(){
                 lasttime_ms = currtime_ms;
 
 #ifdef SDL_DISPLAY
-                int len = 100 * sizeof(char);	// as allocated in init_videoIn
-                char sdlcaption[100];
-                snprintf(sdlcaption, len, "%s, %.1f fps", "UVC socket", frmrate);
-                SDL_WM_SetCaption(sdlcaption, NULL);
+                if (bSDLinit){
+                    int len = 100 * sizeof(char);	// as allocated in init_videoIn
+                    char sdlcaption[100];
+                    snprintf(sdlcaption, len, "%s, %.1f fps", "UVC socket", frmrate);
+                    SDL_WM_SetCaption(sdlcaption, NULL);
+                }
 #endif
 			    printf("%s: frame rate: %g \n", clientName, frmrate);
             }
