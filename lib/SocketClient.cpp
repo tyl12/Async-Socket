@@ -175,7 +175,6 @@ void* SocketClient::getTag(){
     return m_tag;
 }
 
-/*
 void SocketClient::receiveThread(){
     std::string key, message;
     int code1, code2;
@@ -195,14 +194,14 @@ void SocketClient::receiveThread(){
         }
     }
 }
-*/
 
 struct pt_data {
     struct vdIn *ptvideoIn;
     float frmrate;
 } ptdata;
 
-void SocketClient::receiveThread(){
+#if 0
+void SocketClient::receiveThread_ext(){
     //DEBUG
     //FILE* dump=fopen("streamsocket.raw", "wb");
     //
@@ -210,7 +209,6 @@ void SocketClient::receiveThread(){
     int code1, code2, code3;
     uint32_t msgId = 0;
     char* frame = NULL;
-	frmrate = 0.0;
 	const int frmrate_update = 30;
 
     //measure fps
@@ -283,3 +281,4 @@ void SocketClient::receiveThread(){
     //fclose(dump);
     free(frame);
 }
+#endif
