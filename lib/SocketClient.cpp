@@ -1,9 +1,6 @@
 #include "SocketClient.h"
 #include <string.h>
 
-#define SDL_DISPLAY
-#undef SDL_DISPLAY
-
 SocketClient::SocketClient(std::string address, int port){
     m_address = address;
     m_port = port;
@@ -201,87 +198,13 @@ void SocketClient::receiveThread(){
 */
 
 struct pt_data {
-    SDL_Surface **ptscreen;
-    SDL_Event *ptsdlevent;
-    SDL_Rect *drect;
     struct vdIn *ptvideoIn;
     float frmrate;
-    SDL_mutex *affmutex;
 } ptdata;
-
-
-
-//ylteng: SDL
-int SocketClient::SDLinit(int width, int height)
-{
-    //
-    SDL_Surface *pscreen;
-    SDL_Event sdlevent;
-    SDL_Thread *mythread;
-    SDL_mutex *affmutex;
-	char driver[128];
-
-    static Uint32 SDL_VIDEO_Flags = SDL_ANYFORMAT | SDL_DOUBLEBUF | SDL_RESIZABLE;
-
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		fprintf(stderr, "Couldn't initialize SDL: %s\n", SDL_GetError());
-		exit(1);
-	}
-
-	printf("SDL information:\n");
-	if (SDL_VideoDriverName(driver, sizeof(driver))) {
-		printf("  Video driver: %s\n", driver);
-	}
-
-    const SDL_VideoInfo *info = SDL_GetVideoInfo();
-
-	if (true) {
-		printf("  A window manager is available\n");
-	}
-	if (!(SDL_VIDEO_Flags & SDL_HWSURFACE))
-		SDL_VIDEO_Flags |= SDL_SWSURFACE;
-
-
-	pscreen = SDL_SetVideoMode(width, height, 0, SDL_VIDEO_Flags);
-
-    //NOTES: here create overlay only for YUV422 format
-	overlay = SDL_CreateYUVOverlay(width, height, SDL_YUY2_OVERLAY, pscreen);
-	drect.x = 0;
-	drect.y = 0;
-	drect.w = pscreen->w;
-	drect.h = pscreen->h;
-	//initLut();
-	//lasttime = SDL_GetTicks();
-
-    /*
-	ptdata.ptscreen = &pscreen;
-	//ptdata.ptvideoIn = videoIn;
-	ptdata.ptsdlevent = &sdlevent;
-	ptdata.drect = &drect;
-	affmutex = SDL_CreateMutex();
-	ptdata.affmutex = affmutex;
-	//mythread = SDL_CreateThread(eventThread, (void *) &ptdata);
-    */
-    return 0;
-}
-
-int SocketClient::SDLdisplay(char* frame, int len)
-{
-    unsigned char *p = NULL;
-	p = (unsigned char *) overlay->pixels[0];
-
-    SDL_LockYUVOverlay(overlay);
-    memcpy(p, frame, len);
-    SDL_UnlockYUVOverlay(overlay);
-    SDL_DisplayYUVOverlay(overlay, &drect);
-    SDL_Delay(10);
-    return 0;
-}
 
 void SocketClient::receiveThread(){
     //DEBUG
     //FILE* dump=fopen("streamsocket.raw", "wb");
-    bSDLinit = 0;
     //
     std::string key, message;
     int code1, code2, code3;
@@ -319,16 +242,6 @@ void SocketClient::receiveThread(){
 
             code3 = receive_buf(frame, msg.bufLen);
 
-#ifdef SDL_DISPLAY
-            if (!bSDLinit){
-                SDLinit(msg.width, msg.height);
-                bSDLinit = 1;
-            }
-            if (bSDLinit)
-                SDLdisplay(frame, msg.bufLen);
-
-            //fwrite(frame, msg.bufLen, 1, dump);
-#endif
 		    if(loop_counter ++ % frmrate_update == 0){
                 gettimeofday(&tv,NULL);
                 currtime_ms = tv.tv_sec*1000 + tv.tv_usec/1000;
@@ -337,14 +250,6 @@ void SocketClient::receiveThread(){
                 }
                 lasttime_ms = currtime_ms;
 
-#ifdef SDL_DISPLAY
-                if (bSDLinit){
-                    int len = 100 * sizeof(char);	// as allocated in init_videoIn
-                    char sdlcaption[100];
-                    snprintf(sdlcaption, len, "%s, %.1f fps", "UVC socket", frmrate);
-                    SDL_WM_SetCaption(sdlcaption, NULL);
-                }
-#endif
 			    printf("%s: frame rate: %g \n", clientName, frmrate);
             }
         }
@@ -377,7 +282,4 @@ void SocketClient::receiveThread(){
     //DEBUG
     //fclose(dump);
     free(frame);
-#ifdef SDL_DISPLAY
-	SDL_Quit();
-#endif
 }

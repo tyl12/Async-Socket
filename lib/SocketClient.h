@@ -10,14 +10,13 @@
 #include <sys/un.h>
 
 #include "Base64.h"
-#include "../../common/message.h"
+#include "common/message.h"
 
 //sdl
 #include <SDL/SDL.h>
 #include <SDL/SDL_thread.h>
 #include <SDL/SDL_audio.h>
 #include <SDL/SDL_timer.h>
-#include <linux/videodev.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <errno.h>
