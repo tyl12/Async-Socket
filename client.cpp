@@ -15,7 +15,11 @@ void onDisconnect(SocketClient *socket){
 
 int main(int argc , char *argv[])
 {
-    SocketClient client("127.0.0.1", 8888);
+#ifdef USE_UNIX_DOMAIN
+    SocketClient client;
+#else
+    SocketClient client(SOCKET_IP_ADDR, SOCKET_PORT);
+#endif
     client.addListener("message", onMessage);
     client.setDisconnectListener(onDisconnect);
 

@@ -19,13 +19,28 @@ void forward(string key, vector<string> messages, SocketClient *exception){
 	}
 }
 
+void onMessage_register(SocketClient *socket, vector<string> messages){
+    cout<<"server receive client message: register " <<endl;
+    if (messages.size() <= 0){
+        cout<<"Invalid messages size"<<endl;
+        return;
+    }
+    for (const auto s:messages)
+        cout<<"    "<<s<<endl;
+    socket->setMac(messages[0]);
+    cout<<socket<<" : " <<messages[0]<<endl;
+}
+
 void onMessage(SocketClient *socket, vector<string> messages){
+    cout<<"server receive client message" <<endl;
+    for (const auto s:messages)
+        cout<<"    "<<s<<endl;
 	forward("message", messages, socket);
 }
 
 void onDisconnect(SocketClient *socket){
 	cout << "client disconnected !" << endl;
-	forward("message", {"Client disconnected"}, socket);
+	//forward("message", {"Client disconnected"}, socket);
 	std::string *_uid = (std::string*) socket->getTag();
 	for(int i=0 ; i<clientsVector.size() ; i++){
 		std::string *uid = (std::string*) clientsVector[i]->getTag();
@@ -64,6 +79,8 @@ int main(int argc , char *argv[]){
 				cout << "client connected !" << endl;
 				SocketClient *client = new SocketClient(sock);
 				client->addListener("message", onMessage);
+				client->addListener("register", onMessage_register);
+
 				client->setDisconnectListener(onDisconnect);
 				client->setTag(new std::string(getUid()));
 				clientsVector.push_back(client);

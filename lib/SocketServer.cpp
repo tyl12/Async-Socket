@@ -13,10 +13,10 @@ SocketServer::SocketServer(int port){
 
 //ylteng: Unix domain socket
 SocketServer::SocketServer(){
-    unlink("uvc_socket");               /* in case it already exists */
+    unlink("ipc_socket");               /* in case it already exists */
     memset(&m_unserver, 0, sizeof(m_unserver));
     m_unserver.sun_family = AF_UNIX;
-    strcpy(m_unserver.sun_path, "uvc_socket");
+    strcpy(m_unserver.sun_path, "ipc_socket");
 
     bUnixDomain = true;
 }

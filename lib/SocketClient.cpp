@@ -195,12 +195,12 @@ void SocketClient::receiveThread(){
     }
 }
 
+#if 0
+
 struct pt_data {
     struct vdIn *ptvideoIn;
     float frmrate;
 } ptdata;
-
-#if 0
 void SocketClient::receiveThread_ext(){
     //DEBUG
     //FILE* dump=fopen("streamsocket.raw", "wb");
