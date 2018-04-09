@@ -35,7 +35,7 @@ SocketClient::SocketClient(){
 }
 
 
-SocketClient::SocketClient(int socket){
+SocketClient::SocketClient(int socket, const char* name){
     m_socket = socket;
     m_tag = NULL;
     m_disconnectListener = NULL;
@@ -43,7 +43,7 @@ SocketClient::SocketClient(int socket){
     m_threadStopped = false;
     m_packetSize = 4096;
     pthread_create(&m_thread, NULL, &staticReceiveThread, this);
-    strcpy(clientName, "");
+    strcpy(clientName, name);
 }
 
 int SocketClient::getSocket(){

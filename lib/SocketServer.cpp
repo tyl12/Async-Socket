@@ -27,7 +27,7 @@ bool SocketServer::start(){
 
         if(m_socket!=-1){
             //if(::bind(m_socket,(struct sockaddr *)&m_unserver , sizeof(m_unserver)) >= 0){
-            int len = offsetof(struct sockaddr_un, sun_path) + strlen("uvc_socket");
+            int len = offsetof(struct sockaddr_un, sun_path) + strlen("ipc_socket");
             if(::bind(m_socket,(struct sockaddr *)&m_unserver , len) >= 0){
                 ::listen(m_socket, 3);
                 return true;
