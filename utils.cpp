@@ -12,6 +12,7 @@
 #include <thread>
 #include <chrono>
 #include <iostream>
+
 #include <boost/ref.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -63,12 +64,13 @@ string get_current_mac_addrs(){
     if ( mac.compare("") == 0){
         cout<<"Failed to get mac addr"<<endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        continue;
     }
     return mac;
 }
 
 
+
+static const char ENV_DEBUG[]="DEBUG";
 bool isDebugEnv(){
     const char *debug = getenv(ENV_DEBUG);
     if (debug == nullptr){
@@ -85,8 +87,10 @@ bool isDebugEnv(){
 #include <string.h>
 #include <shadow.h>
 #include <unistd.h>
+
+static const char user_passwd[]="invalid_passwd";
 int check_passwd(const char* name = NULL){
-    char *username = NULL;
+    const char *username = NULL;
     if (name == NULL || strcmp(name, "") == 0)
         username = getlogin();
     else
@@ -100,7 +104,7 @@ int check_passwd(const char* name = NULL){
         return -1;
     }
 
-    if(strcmp(sp->sp_pwdp, (char*)crypt(user_passwd.c_str(), sp->sp_pwdp)) == 0) {
+    if(strcmp(sp->sp_pwdp, (char*)crypt(user_passwd, sp->sp_pwdp)) == 0) {
         printf("passwd check success\n");
         return 0;
     }
@@ -110,6 +114,9 @@ int check_passwd(const char* name = NULL){
     }
 }
 
+
+const int stdoutfd(dup(fileno(stdout)));
+const int stderrfd(dup(fileno(stdout)));
 int redirect_stdout_stderr(const char* fname){
     int newdest = open(fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     fflush(stdout);

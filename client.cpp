@@ -2,6 +2,7 @@
 #include <thread>
 #include "common/message.h"
 #include "lib/SocketClient.h"
+#include "utils.h"
 
 using namespace std;
 
