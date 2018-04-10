@@ -87,7 +87,7 @@ void onDisconnect(SocketClient *socket){
 		std::string *uid = (std::string*) clientsVector[i]->getTag();
 		if((*uid)==(*_uid)){
 			clientsVector.erase(clientsVector.begin() + i);
-            cout<<"OnDisconnect found client: " << *_uid <<endl;
+            cout<<"OnDisconnect handle client: " << *_uid <<endl;
             break; //should not continue the loop, with erase ops
 		}
 	}
@@ -143,17 +143,18 @@ int stopServer()//TODO
     return 0;
 }
 
-
 int main(int argc , char *argv[]){
     thread t = thread([](){
         startServer();
     });
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-    send_adid_to_allclients("ad1");
-    std::this_thread::sleep_for(std::chrono::milliseconds(6000));
-    send_adid_to_allclients("ad2");
-    std::this_thread::sleep_for(std::chrono::milliseconds(7000));
-    send_adid_to_allclients("ad3");
+
+
+    std::string line;
+    while(1){
+        cout << "input advertise id: ";
+        getline(cin, line);
+        send_adid_to_allclients(line);
+    }
 
     stopServer();
     t.join();

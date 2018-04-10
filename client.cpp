@@ -1,4 +1,5 @@
 #include <iostream>
+#include <thread>
 #include "common/message.h"
 #include "lib/SocketClient.h"
 
@@ -22,6 +23,8 @@ void onDisconnect(SocketClient *socket){
 
 int main(int argc , char *argv[])
 {
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
 #ifdef USE_UNIX_DOMAIN
     SocketClient client;
 #else
