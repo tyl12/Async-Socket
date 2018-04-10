@@ -1,11 +1,55 @@
 #include "SocketClient.h"
 #include <string.h>
+#include <iostream>
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+#include <ctype.h>
+#include <string.h>
+
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+using namespace std;
+
 
 SocketClient::SocketClient(std::string address, int port){
-    m_address = address;
-    m_port = port;
 
-    m_server.sin_addr.s_addr = inet_addr(address.c_str());
+    const string NUMSTR="0123456789";
+    if (address.size()>0 && NUMSTR.find(address[0]) == string::npos){
+        cout<<"address not start with numeric, conver to ip"<<endl;
+
+        extern int h_errno;
+        struct hostent *h;
+        h=gethostbyname(address.c_str());
+        if(h==NULL) {
+            printf("%s\n",hstrerror(h_errno));
+        }
+        else {
+            struct sockaddr_in addr_in;
+            memcpy(&m_server.sin_addr.s_addr,h->h_addr,4);
+
+            struct in_addr in;
+            in.s_addr=m_server.sin_addr.s_addr;
+            printf("host name:%s\n",h->h_name);
+            printf("ip lenght:%d\n",h->h_length);//IPv4 or IPv6
+            printf("type:%d\n",h->h_addrtype);
+            printf("ip:%s\n",inet_ntoa(in));//½«һ¸öª»»³É»¸öªÍ±êµã¸ñÄַû
+
+            m_address = inet_ntoa(in);
+            m_hostname = address;
+        }
+    }
+    else{
+        m_port = port;
+        m_server.sin_addr.s_addr = inet_addr(address.c_str());
+
+        m_address = address;
+        m_hostname = "";
+    }
+
+
     m_server.sin_family = AF_INET;
     m_server.sin_port = htons(port);
 

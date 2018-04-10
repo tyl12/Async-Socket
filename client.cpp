@@ -28,8 +28,10 @@ int main(int argc , char *argv[])
 
 #ifdef USE_UNIX_DOMAIN
     SocketClient client;
+    cout<<"Client try connect to UNIX domain socket"<<endl;;
 #else
     SocketClient client(SOCKET_IP_ADDR, SOCKET_PORT);
+    cout<<"Client try connect to "<<SOCKET_IP_ADDR<<":"<<SOCKET_PORT<<endl;
 #endif
     client.setDisconnectListener(onDisconnect);
 
@@ -41,6 +43,14 @@ int main(int argc , char *argv[])
         return 0;
     }
     cout << "connected to server." << endl;
+
+    //register cilent mac
+    string&& macs=get_current_mac_addrs();
+    cout<<"this client's macs: " << macs<<endl;
+    if (!client.send("register", {macs})){
+        cout<<"fail to register"<<endl;
+        return 0;
+    }
 
     std::string line;
     while(1){

@@ -32,6 +32,7 @@ class SocketClient {
         struct sockaddr_in m_server;
 
         std::string sMac;
+        std::string m_hostname;
         std::string m_address;
         int m_port;
         int m_socket;

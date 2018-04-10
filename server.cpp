@@ -68,7 +68,7 @@ void onMessage_register(SocketClient *socket, vector<string> messages){
     for (const auto s:messages)
         cout<<"    "<<s<<endl;
     socket->setMac(messages[0]);
-    cout<<socket<<" : " <<messages[0]<<endl;
+    cout<<"->"<<socket<<" : " << *(string*)socket->getTag() << " : " <<messages[0]<<endl;
 }
 
 void onMessage(SocketClient *socket, vector<string> messages){
@@ -130,6 +130,7 @@ int startServer() {
 		}
 	}
 	else{
+        perror("start server error");
 		cout << "fail to start server" << endl;
 	}
 

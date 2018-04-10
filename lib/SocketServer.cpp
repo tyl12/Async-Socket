@@ -1,4 +1,5 @@
 #include "SocketServer.h"
+#include <stdio.h>
 #include <unistd.h>
 #include "stddef.h"
 
@@ -32,7 +33,11 @@ bool SocketServer::start(){
                 ::listen(m_socket, 3);
                 return true;
             }
+            else
+                perror("fail to bind socket");
         }
+        else
+            perror("fail to create socket");
     }
     else{
         m_socket = ::socket(AF_INET , SOCK_STREAM , 0);
@@ -42,7 +47,11 @@ bool SocketServer::start(){
                 ::listen(m_socket, 3);
                 return true;
             }
+            else
+                perror("fail to bind socket");
         }
+        else
+            perror("fail to create socket");
     }
     return false;
 }
@@ -55,6 +64,7 @@ int SocketServer::accept(){
 
         int client_sock = ::accept(m_socket, (struct sockaddr *)&client, (socklen_t*)&c);
         if (client_sock < 0){
+            perror("accept error");
             return -1;
         }
         return client_sock;
@@ -64,6 +74,7 @@ int SocketServer::accept(){
 
         int client_sock = ::accept(m_socket, (struct sockaddr *)&client, (socklen_t*)&c);
         if (client_sock < 0){
+            perror("accept error");
             return -1;
         }
         return client_sock;
