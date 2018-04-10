@@ -1,5 +1,10 @@
 #include <iostream>
 #include <vector>
+#include <chrono>
+#include <iostream>
+#include <thread>
+#include <string>
+#include <mutex>
 
 #include "Tools.h"
 #include "lib/SocketClient.h"
@@ -8,6 +13,41 @@
 using namespace std;
 
 std::vector<SocketClient*> clientsVector;
+static std::mutex mtx_lock;
+
+//TODO: add lock for client send
+int send_adid_to_client(SocketClient* client, const string ad){
+
+    cout<<__FUNCTION__<<":"<<ad<<endl;
+
+    string key = "advertise";
+    vector<string> ads;
+    ads.push_back(ad);
+    client->send(key, ads);
+    return 0;
+}
+
+int send_adid_to_allclients(const string& ad)
+{
+    lock_guard<mutex> l(mtx_lock);
+    for (auto& c:clientsVector) {
+        send_adid_to_client(c, ad);
+    }
+}
+
+//get socket client instance by client's mac
+SocketClient* getClientByMac(const string& mac) {
+    lock_guard<mutex> l(mtx_lock);
+
+    for (auto& c:clientsVector) {
+        const string& clientMac = c->getMac();
+        if (clientMac.find(mac) != string::npos){
+            cout<<__FUNCTION__<<"found existing client with mac : "<< mac<<endl;
+            return c;
+        }
+    }
+    return nullptr;
+}
 
 void forward(string key, vector<string> messages, SocketClient *exception){
 	std::string *_uid = (std::string*) exception->getTag();
@@ -33,19 +73,22 @@ void onMessage_register(SocketClient *socket, vector<string> messages){
 
 void onMessage(SocketClient *socket, vector<string> messages){
     cout<<"server receive client message" <<endl;
+	//forward("message", messages, socket);
     for (const auto s:messages)
         cout<<"    "<<s<<endl;
-	forward("message", messages, socket);
 }
 
 void onDisconnect(SocketClient *socket){
 	cout << "client disconnected !" << endl;
 	//forward("message", {"Client disconnected"}, socket);
 	std::string *_uid = (std::string*) socket->getTag();
+    lock_guard<mutex> l(mtx_lock);
 	for(int i=0 ; i<clientsVector.size() ; i++){
 		std::string *uid = (std::string*) clientsVector[i]->getTag();
 		if((*uid)==(*_uid)){
 			clientsVector.erase(clientsVector.begin() + i);
+            cout<<"OnDisconnect found client: " << *_uid <<endl;
+            break; //should not continue the loop, with erase ops
 		}
 	}
 	delete socket;
@@ -58,8 +101,7 @@ void freeMemory(){
 	}
 }
 
-
-int main(int argc , char *argv[]){
+int startServer() {
 	srand(time(NULL));
 
 #ifdef USE_UNIX_DOMAIN
@@ -91,6 +133,31 @@ int main(int argc , char *argv[]){
 		cout << "fail to start server" << endl;
 	}
 
+    //in most case, will not enter.
 	freeMemory();
+    return 0;
+}
+
+int stopServer()//TODO
+{
+    return 0;
+}
+
+
+int main(int argc , char *argv[]){
+    thread t = thread([](){
+        startServer();
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    send_adid_to_allclients("ad1");
+    std::this_thread::sleep_for(std::chrono::milliseconds(6000));
+    send_adid_to_allclients("ad2");
+    std::this_thread::sleep_for(std::chrono::milliseconds(7000));
+    send_adid_to_allclients("ad3");
+
+    stopServer();
+    t.join();
+
 	return 0;
 }
+

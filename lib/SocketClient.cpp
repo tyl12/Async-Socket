@@ -88,6 +88,7 @@ void SocketClient::disconnect(){
     m_threadStopped = true;
 }
 
+//TODO: add lock protect.
 bool SocketClient::send(std::string message){
     uint32_t length = htonl(message.size());
     if(::send(m_socket, &length, sizeof(length), 0) < 0){

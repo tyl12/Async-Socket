@@ -31,7 +31,7 @@ class SocketClient {
 
         struct sockaddr_in m_server;
 
-        string sMac;
+        std::string sMac;
         std::string m_address;
         int m_port;
         int m_socket;
@@ -69,10 +69,10 @@ class SocketClient {
         void setDisconnectListener(void (*disconnectListener) (SocketClient*));
         void setTag(void *tag);
 
-        void setMac(const string mac){
+        void setMac(const std::string mac){
             sMac = mac;
         }
-        string getMac(){ return sMac;}
+        std::string getMac(){ return sMac;}
 };
 
 #endif

@@ -1,4 +1,5 @@
 #include <iostream>
+#include "common/message.h"
 #include "lib/SocketClient.h"
 
 using namespace std;
@@ -6,6 +7,12 @@ using namespace std;
 void onMessage(SocketClient *sender, vector<string> messages){
     for(int i=0 ; i<messages.size() ; i++){
         cout << "message[" << i << "] : " << messages[i] << endl;
+    }
+}
+
+void onMessage_advertise(SocketClient *sender, vector<string> messages){
+    for(int i=0 ; i<messages.size() ; i++){
+        cout << "advertise[" << i << "] : " << messages[i] << endl;
     }
 }
 
@@ -20,8 +27,10 @@ int main(int argc , char *argv[])
 #else
     SocketClient client(SOCKET_IP_ADDR, SOCKET_PORT);
 #endif
-    client.addListener("message", onMessage);
     client.setDisconnectListener(onDisconnect);
+
+    client.addListener("message", onMessage);
+    client.addListener("advertise", onMessage_advertise);
 
     if(!client.connect()){
         cout << "could not connect to server" << endl;
@@ -43,3 +52,4 @@ int main(int argc , char *argv[])
 
     return 0;
 }
+
