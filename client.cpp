@@ -39,6 +39,7 @@ int main(int argc , char *argv[])
     client.addListener("advertise", onMessage_advertise);
 
     if(!client.connect()){
+        perror("connect error");
         cout << "could not connect to server" << endl;
         return 0;
     }
@@ -48,6 +49,7 @@ int main(int argc , char *argv[])
     string&& macs=get_current_mac_addrs();
     cout<<"this client's macs: " << macs<<endl;
     if (!client.send("register", {macs})){
+        perror("register error");
         cout<<"fail to register"<<endl;
         return 0;
     }
@@ -57,6 +59,7 @@ int main(int argc , char *argv[])
         cout << "input: ";
         getline(cin, line);
         if(!client.send("message", {line})){
+            perror("message error");
             cout << "failed to send message" << endl;
             return 0;
         }
