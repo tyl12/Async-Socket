@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -29,8 +30,12 @@ int send_adid_to_client(SocketClient* client, const string ad){
 
 int send_adid_to_allclients(const string& ad)
 {
-    lock_guard<mutex> l(mtx_lock);
-    for (auto& c:clientsVector) {
+    std::vector<SocketClient*> clients;
+    {
+        lock_guard<mutex> l(mtx_lock);
+        clients = clientsVector;
+    }
+    for (auto& c:clients) {
         send_adid_to_client(c, ad);
     }
 }
@@ -152,9 +157,13 @@ int main(int argc , char *argv[]){
 
     std::string line;
     while(1){
+        /*
         cout << "input advertise id: ";
         getline(cin, line);
         send_adid_to_allclients(line);
+        */
+        usleep(1000*1000*10);
+        send_adid_to_allclients("test.mp4");
     }
 
     stopServer();
