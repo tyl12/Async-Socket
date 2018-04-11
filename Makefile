@@ -1,5 +1,5 @@
 
-CFLAGS=-O2 -I${SDLFLAGS} -pthread -lcrypt -lboost_system
+CFLAGS=-O2 -I${SDLFLAGS} -pthread -lcrypt #-lboost_system
 
 all:
 	g++ server.cpp -o server Tools.h -I ./ -I lib/ lib/*.cpp ./utils.cpp -lpthread -std=c++11  ${CFLAGS}

@@ -12,10 +12,10 @@
 #include <thread>
 #include <chrono>
 #include <iostream>
-#include <boost/ref.hpp>
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
+//#include <boost/ref.hpp>
+//#include <boost/asio.hpp>
+//#include <boost/bind.hpp>
+//#include <boost/function.hpp>
 
 using namespace std;
 

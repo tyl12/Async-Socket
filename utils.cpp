@@ -13,10 +13,10 @@
 #include <chrono>
 #include <iostream>
 
-#include <boost/ref.hpp>
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
+//#include <boost/ref.hpp>
+//#include <boost/asio.hpp>
+//#include <boost/bind.hpp>
+//#include <boost/function.hpp>
 
 using namespace std;
 
@@ -56,6 +56,7 @@ string launch_cmd(const char* cmd){
 
 string get_current_mac_addrs(){
     string mac = launch_cmd("ifconfig | grep HWaddr | awk '{print $NF}'");
+    /*
     replace(mac.begin(), mac.end(), '\n', ';');
     if ( mac.compare("") == 0){
         mac = launch_cmd("ifconfig | grep \"硬件地址\" | awk '{print $NF}'");
@@ -65,6 +66,7 @@ string get_current_mac_addrs(){
         cout<<"Failed to get mac addr"<<endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
+    */
     return mac;
 }
 
