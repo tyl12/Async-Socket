@@ -143,6 +143,13 @@ bool SocketClient::send(std::string message){
     }
     return true;
 }
+bool SocketClient::send_simple(std::string key, std::string message){
+    if(send(key)){
+        return send(message);
+    }
+    return false;
+}
+
 
 bool SocketClient::send(std::string key, std::vector<std::string> messages){
     if(send(key)){
@@ -204,7 +211,7 @@ int SocketClient::receive_buf(void* buf, uint32_t length){
     return received; //return the real received count
 }
 
-void SocketClient::addListener(std::string key, void (*messageListener) (SocketClient*, std::vector<std::string>)){
+void SocketClient::addListener(std::string key, void (*messageListener) (SocketClient*, std::string)){
     m_messageListenerMap[key] = messageListener;
 }
 
@@ -234,7 +241,8 @@ void SocketClient::receiveThread(){
         }
         else if(code1!=-1 && code2!=-1){
             if(m_messageListenerMap[key]!=NULL){
-                (*m_messageListenerMap[key])(this, stringToVector(message));
+                //(*m_messageListenerMap[key])(this, stringToVector(message));
+                (*m_messageListenerMap[key])(this, message);
             }
         }
     }

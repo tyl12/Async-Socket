@@ -6,16 +6,12 @@
 
 using namespace std;
 
-void onMessage(SocketClient *sender, vector<string> messages){
-    for(int i=0 ; i<messages.size() ; i++){
-        cout << "message[" << i << "] : " << messages[i] << endl;
-    }
+void onMessage(SocketClient *sender, string message){
+    cout<<"message: "<<message<<endl;
 }
 
-void onMessage_advertise(SocketClient *sender, vector<string> messages){
-    for(int i=0 ; i<messages.size() ; i++){
-        cout << "advertise[" << i << "] : " << messages[i] << endl;
-    }
+void onMessage_advertise(SocketClient *sender, string message){
+    cout<<"message: "<<message<<endl;
 }
 
 void onDisconnect(SocketClient *socket){
@@ -48,7 +44,7 @@ int main(int argc , char *argv[])
     //register cilent mac
     string&& macs=get_current_mac_addrs();
     cout<<"this client's macs: " << macs<<endl;
-    if (!client.send("register", {macs})){
+    if (!client.send_simple("register", macs)){
         perror("register error");
         cout<<"fail to register"<<endl;
         return 0;
@@ -58,7 +54,7 @@ int main(int argc , char *argv[])
     while(1){
         cout << "input: ";
         getline(cin, line);
-        if(!client.send("message", {line})){
+        if(!client.send_simple("message", line)){
             perror("message error");
             cout << "failed to send message" << endl;
             return 0;

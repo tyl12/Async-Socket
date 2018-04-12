@@ -24,7 +24,7 @@ int send_adid_to_client(SocketClient* client, const string ad){
     string key = "advertise";
     vector<string> ads;
     ads.push_back(ad);
-    client->send(key, ads);
+    client->send_simple(key, ad);
     return 0;
 }
 
@@ -64,23 +64,18 @@ void forward(string key, vector<string> messages, SocketClient *exception){
 	}
 }
 
-void onMessage_register(SocketClient *socket, vector<string> messages){
+void onMessage_register(SocketClient *socket, string message){
     cout<<"server receive client message: register " <<endl;
-    if (messages.size() <= 0){
+    if (message.size() <= 0){
         cout<<"Invalid messages size"<<endl;
         return;
     }
-    for (const auto s:messages)
-        cout<<"    "<<s<<endl;
-    socket->setMac(messages[0]);
-    cout<<"->"<<socket<<" : " << *(string*)socket->getTag() << " : " <<messages[0]<<endl;
+    socket->setMac(message);
+    cout<<"->"<<socket<<" : " << *(string*)socket->getTag() << " : " <<message<<endl;
 }
 
-void onMessage(SocketClient *socket, vector<string> messages){
-    cout<<"server receive client message" <<endl;
-	//forward("message", messages, socket);
-    for (const auto s:messages)
-        cout<<"    "<<s<<endl;
+void onMessage(SocketClient *socket, string message){
+    cout<<"server receive client message" <<message<<endl;
 }
 
 void onDisconnect(SocketClient *socket){
