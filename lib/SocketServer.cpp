@@ -1,6 +1,7 @@
 #include "SocketServer.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include "stddef.h"
 
 SocketServer::SocketServer(int port){
@@ -24,9 +25,14 @@ SocketServer::SocketServer(){
 
 bool SocketServer::start(){
     if (bUnixDomain){
-        m_socket = ::socket(AF_UNIX , SOCK_STREAM , 0);
+        m_socket = ::socket(AF_UNIX , SOCK_STREAM , 0); //default block mode
 
         if(m_socket!=-1){
+            int flags = fcntl(m_socket, F_GETFL, 0);
+            int ret = fcntl(m_socket, F_SETFL, flags&~O_NONBLOCK);
+            if (ret == -1){
+                perror("F_SETFL socket to block mode error");
+            }
             //if(::bind(m_socket,(struct sockaddr *)&m_unserver , sizeof(m_unserver)) >= 0){
             int len = offsetof(struct sockaddr_un, sun_path) + strlen("ipc_socket");
             if(::bind(m_socket,(struct sockaddr *)&m_unserver , len) >= 0){
@@ -43,6 +49,11 @@ bool SocketServer::start(){
         m_socket = ::socket(AF_INET , SOCK_STREAM , 0);
 
         if(m_socket!=-1){
+            int flags = fcntl(m_socket, F_GETFL, 0);
+            int ret = fcntl(m_socket, F_SETFL, flags&~O_NONBLOCK);
+            if (ret == -1){
+                perror("F_SETFL socket to block mode error");
+            }
             if(::bind(m_socket,(struct sockaddr *)&m_server , sizeof(m_server)) >= 0){
                 ::listen(m_socket, 3);
                 return true;

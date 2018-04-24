@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <ctype.h>
 #include <string.h>
@@ -102,6 +103,12 @@ bool SocketClient::connect(){
             return false;
         }
 
+        int flags = fcntl(m_socket, F_GETFL, 0);
+        int ret = fcntl(m_socket, F_SETFL, flags&~O_NONBLOCK);
+        if (ret == -1){
+            perror("F_SETFL socket to block mode error");
+        }
+
         if(::connect(m_socket, (struct sockaddr *)&m_unserver, sizeof(m_unserver)) < 0)
         {
             return false;
@@ -112,6 +119,12 @@ bool SocketClient::connect(){
         if(m_socket == -1)
         {
             return false;
+        }
+
+        int flags = fcntl(m_socket, F_GETFL, 0);
+        int ret = fcntl(m_socket, F_SETFL, flags&~O_NONBLOCK);
+        if (ret == -1){
+            perror("F_SETFL socket to block mode error");
         }
 
         if(::connect(m_socket, (struct sockaddr *)&m_server, sizeof(m_server)) < 0)
@@ -135,10 +148,10 @@ void SocketClient::disconnect(){
 //TODO: add lock protect.
 bool SocketClient::send(std::string message){
     uint32_t length = htonl(message.size());
-    if(::send(m_socket, &length, sizeof(length), 0) < 0){
+    if(::send(m_socket, &length, sizeof(length), MSG_WAITALL) < 0){
         return false;
     }
-    if(::send(m_socket, message.c_str(), message.size(), 0) < 0){
+    if(::send(m_socket, message.c_str(), message.size(), MSG_WAITALL) < 0){
         return false;
     }
     return true;
@@ -162,14 +175,14 @@ int SocketClient::receive(std::string &message){
     uint32_t length;
     int code;
 
-    code = ::recv(m_socket, &length, sizeof(length), 0);
+    code = ::recv(m_socket, &length, sizeof(length), MSG_WAITALL);
     if(code!=-1 && code!=0){
         length = ntohl(length);
         char server_reply[length];
         message = "";
 
         for(int i=0 ; i<length/m_packetSize ; i++){
-            code = ::recv(m_socket, server_reply, m_packetSize, 0);
+            code = ::recv(m_socket, server_reply, m_packetSize, MSG_WAITALL);
             if(code!=-1 && code!=0){
                 message += std::string(server_reply, m_packetSize);
             }
@@ -179,7 +192,7 @@ int SocketClient::receive(std::string &message){
         }
         if(length%m_packetSize!=0){
             char server_reply_rest[length%m_packetSize];
-            code = ::recv(m_socket, server_reply_rest, length%m_packetSize, 0);
+            code = ::recv(m_socket, server_reply_rest, length%m_packetSize, MSG_WAITALL);
             if(code!=-1 && code!=0){
                 message += std::string(server_reply_rest, length%m_packetSize);
             }
